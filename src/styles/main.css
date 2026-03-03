@@ -200,14 +200,26 @@ body.panel-collapsed #panel-toggle {
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group label { font-size: 0.78rem; color: var(--text-secondary); }
 .form-group select {
-  background: rgba(255,255,255,0.05); color: var(--text-primary);
-  border: 1px solid var(--panel-border); border-radius: var(--radius-sm);
-  padding: 8px 10px; font-size: 0.82rem; cursor: pointer;
+  background: rgba(40, 40, 60, 0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238888aa' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color: var(--text-primary);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 36px 10px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
   transition: var(--transition);
+  appearance: none;
+  -webkit-appearance: none;
+}
+.form-group select option {
+  background-color: #1a1a2e; /* Solid dark background for the list */
+  color: var(--text-primary);
+  padding: 8px;
 }
 .form-group select:hover, .form-group select:focus {
-  border-color: var(--accent); outline: none;
-  background: rgba(124, 107, 255, 0.08);
+  border-color: var(--accent);
+  outline: none;
+  background-color: rgba(60, 60, 90, 0.9);
 }
 .form-group input[type="range"] {
   -webkit-appearance: none; appearance: none;
@@ -256,6 +268,12 @@ body.panel-collapsed #panel-toggle {
 
 .layer-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .layer-name { flex: 1; font-size: 0.82rem; }
+.group-badge {
+  display: inline-block; font-style: normal;
+  background: rgba(124, 107, 255, 0.25); color: var(--accent);
+  font-size: 0.68rem; padding: 1px 6px; border-radius: 10px;
+  margin-left: 4px; vertical-align: middle;
+}
 .layer-toggle {
   background: none; border: 1px solid var(--panel-border);
   color: var(--text-muted); cursor: pointer;

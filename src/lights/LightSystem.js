@@ -26,18 +26,10 @@ export class LightSystem {
     this.lights.hemi = hemi;
 
     // Directional (sun)
-    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.2); // Tăng nhẹ vì không còn shadow
     dir.name = 'directional';
     dir.position.set(10, 16, 8);
-    dir.castShadow = true;
-    dir.shadow.mapSize.set(1024, 1024);
-    dir.shadow.camera.near = 0.1;
-    dir.shadow.camera.far = 50;
-    dir.shadow.camera.left = -20;
-    dir.shadow.camera.right = 20;
-    dir.shadow.camera.top = 20;
-    dir.shadow.camera.bottom = -20;
-    dir.shadow.bias = -0.001;
+    dir.castShadow = false; // TẮT – cảnh tĩnh, tiết kiệm ~80 draw calls/frame
     s.add(dir);
     this.lights.directional = dir;
 

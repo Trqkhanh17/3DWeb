@@ -15,7 +15,7 @@ export class Renderer {
 
     this.instance.setPixelRatio(1); // Fixed 1x for max FPS
     this.instance.setSize(window.innerWidth, window.innerHeight);
-    this.instance.shadowMap.enabled = false;
+    this.instance.shadowMap.enabled = false; // TẮT – không có light nào cast shadow
     this.instance.toneMapping = THREE.ACESFilmicToneMapping;
     this.instance.toneMappingExposure = 1.0;
     this.instance.outputColorSpace = THREE.SRGBColorSpace;

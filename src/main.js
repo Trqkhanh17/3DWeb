@@ -10,19 +10,35 @@ import { Performance }    from './utils/Performance.js';
 import { Picker }         from './utils/Picker.js';
 
 class App {
+  #requestID;
+  #renderer;
+  #scene;
+  #controls;
+  #picker;
+  #uiPanel;
+
   constructor() {
+    console.log('%c [App] Đang khởi tạo ứng dụng... ', 'background: #000; color: #fff');
     this.#init();
   }
 
   async #init() {
+    // ── Pre-Cleanup ───────────────────────────────
+    // Nếu đã có App chạy (do HMR), dừng nó lại trước khi tạo cái mới
+    if (window.__currentApp) {
+        window.__currentApp.dispose();
+    }
+    window.__currentApp = this;
+
     // ── Core ──────────────────────────────────────
     const canvas   = document.getElementById('three-canvas');
-    const renderer = new Renderer(canvas);
+    this.#renderer = new Renderer(canvas);
     const { instance: scene }  = new SceneSetup();
+    this.#scene = scene;
     const { instance: camera } = new Camera();
 
     // ── Controls ──────────────────────────────────
-    const controls = new OrbitControls(camera, canvas);
+    this.#controls = new OrbitControls(camera, canvas);
 
     // ── Lights ────────────────────────────────────
     this.#setProgress(20, 'Xây dựng hệ thống ánh sáng...');
@@ -49,28 +65,27 @@ class App {
     }
 
     // ── Picker ────────────────────────────────────
-    // Flatten all meshes for raycaster
     const allMeshes = objectManager.objects.flatMap(o =>
-      o.meshes.map(mesh => ({ mesh, name: o.name }))
+      o.meshes.map(mesh => ({ mesh, name: o.name, label: o.label }))
     );
-    new Picker(camera, allMeshes, canvas);
+    this.#picker = new Picker(camera, allMeshes, canvas);
 
     // ── Performance ───────────────────────────────
     const perf = new Performance();
 
     // ── Resize ────────────────────────────────────
-    window.addEventListener('resize', () => {
+    this._onResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
-      renderer.resize();
-    });
+      this.#renderer.resize();
+    };
+    window.addEventListener('resize', this._onResize);
 
     // ── UI ────────────────────────────────────────
     this.#setProgress(90, 'Khởi tạo giao diện...');
-    new UIPanel(objectManager, lightSystem);
+    this.#uiPanel = new UIPanel(objectManager, lightSystem);
 
-    // Pre-compile all shaders (avoid first-frame stutter)
-    renderer.instance.compile(scene, camera);
+    this.#renderer.instance.compile(scene, camera);
 
     // ── Start render loop ─────────────────────────
     this.#setProgress(100, 'Sẵn sàng!');
@@ -78,14 +93,38 @@ class App {
       document.getElementById('loading-screen')?.classList.add('hidden');
     }, 600);
 
-    const r = renderer.instance;
+    const r = this.#renderer.instance;
     const tick = () => {
-      requestAnimationFrame(tick);
-      controls.update();
+      this.#requestID = requestAnimationFrame(tick);
+      this.#controls.update();
       r.render(scene, camera);
-      perf.update(renderer);
+      perf.update(this.#renderer);
     };
     tick();
+  }
+
+  dispose() {
+    console.log('[App] Đang dọn dẹp App cũ...');
+    if (this.#requestID) cancelAnimationFrame(this.#requestID);
+    if (this._onResize) window.removeEventListener('resize', this._onResize);
+    
+    if (this.#picker) this.#picker.dispose();
+    if (this.#uiPanel) this.#uiPanel.dispose();
+    
+    if (this.#renderer) {
+        this.#renderer.instance.dispose();
+        this.#renderer.instance.forceContextLoss();
+    }
+    
+    // Xóa trắng canvas
+    const canvas = document.getElementById('three-canvas');
+    if (canvas) {
+        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+        if (gl) {
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+        }
+    }
   }
 
   #setProgress(pct, text) {

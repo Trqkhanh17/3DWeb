@@ -52,32 +52,48 @@ export class UIPanel {
   #buildLayerList() {
     const list = document.getElementById('layer-list');
     if (!list) return;
+    list.innerHTML = '';
 
-    const skip = ['Sàn']; // don't list floor as interactive
+    // Gom các object có cùng groupId thành 1 entry
+    const seen = new Set();
+    const entries = []; // [{ repName, groupId, color, count }]
 
-    this.#objectManager.objects.forEach(({ name, color }) => {
-      if (skip.includes(name)) return;
+    this.#objectManager.objects.forEach(obj => {
+      // CHỈ xử lý các object thuộc về một nhóm (groupId không null)
+      if (!obj.groupId) return;
+
+      const key = obj.groupId;
+      if (seen.has(key)) return;
+      seen.add(key);
+
+      const count = this.#objectManager.objects.filter(o => o.groupId === obj.groupId).length;
+      entries.push({ repName: obj.name, groupId: obj.groupId, color: obj.color, count, label: obj.groupLabel });
+    });
+
+    console.log(`%c [UI] Hiển thị ${entries.length} nhóm được định nghĩa (${this.#objectManager.objects.length} mảnh tổng cộng) `, 'color: #7c6bff');
+
+    entries.forEach(({ repName, count, color, label }) => {
+      const displayName = count > 1 ? `${label} (Nhóm)` : `${label} (${repName})`;
 
       const item = document.createElement('div');
       item.className = 'layer-item';
-      item.dataset.name = name;
+      item.dataset.name = repName;
       item.innerHTML = `
         <span class="layer-color" style="background:${color}"></span>
-        <span class="layer-name">${name}</span>
-        <button class="layer-toggle" title="Ẩn/Hiện">👁</button>
+        <span class="layer-name">${displayName}${count > 1 ? ` <em class="group-badge">${count}</em>` : ''}</span>
+        <button class="layer-toggle" title="Ẩn/Hiện nhóm">👁</button>
       `;
 
       let visible = true;
       item.querySelector('.layer-toggle').addEventListener('click', (e) => {
         e.stopPropagation();
         visible = !visible;
-        this.#objectManager.setVisible(name, visible);
+        this.#objectManager.setVisible(repName, visible); // setVisible đã xử lý cả nhóm
         item.classList.toggle('hidden-obj', !visible);
       });
 
       item.addEventListener('click', () => {
-        this.#selectObject(name);
-        // Switch to material tab
+        this.#selectObject(repName);
         document.querySelector('[data-tab="materials"]')?.click();
       });
 
@@ -144,9 +160,18 @@ export class UIPanel {
   #initObjectSelect() {
     const sel = document.getElementById('mat-object-select');
     if (!sel) return;
-    this.#objectManager.objects.forEach(({ name }) => {
+    sel.innerHTML = ''; // Clear existing options
+
+    const seen = new Set();
+    this.#objectManager.objects.forEach(obj => {
+      if (!obj.groupId) return;
+      const key = obj.groupId;
+      if (seen.has(key)) return;
+      seen.add(key);
+
       const opt = document.createElement('option');
-      opt.value = name; opt.textContent = name;
+      opt.value = obj.name; // Keep repName as value for Material application
+      opt.textContent = obj.groupLabel;
       sel.appendChild(opt);
     });
   }
@@ -183,27 +208,52 @@ export class UIPanel {
 
   /* ─── Picker ─────────────────────────────────── */
   #initPicker() {
-    window.addEventListener('object-select', (e) => {
-      const name = e.detail;
-      const selected = document.getElementById('selected-obj');
-      if (name) {
-        selected.textContent = `📌 ${name}`;
-        this.#selectObject(name);
-      } else {
-        selected.textContent = 'Chưa chọn đối tượng';
-        this.#clearSelection();
-      }
-    });
+    window.addEventListener('object-select', this.#onObjectSelect);
+    window.addEventListener('debug-intersects', this.#onDebugIntersects);
   }
+
+  #onObjectSelect = (e) => {
+    const name = e.detail;
+    const selected = document.getElementById('selected-obj');
+    if (name) {
+      if (selected) selected.textContent = `📌 ${name}`;
+      this.#selectObject(name);
+    } else {
+      if (selected) selected.textContent = 'Chưa chọn đối tượng';
+      this.#clearSelection();
+    }
+  };
+
+  dispose() {
+    console.log('[UI] Dọn dẹp listener...');
+    window.removeEventListener('object-select', this.#onObjectSelect);
+    window.removeEventListener('debug-intersects', this.#onDebugIntersects);
+  }
+
+  #onDebugIntersects = (e) => {
+    const names = e.detail;
+    if (names && names.length > 0) {
+      this.#objectManager.highlightObjects(names, 800);
+    }
+  };
 
   #selectObject(name) {
     this.#selectedObject = name;
+    
+    // Tìm object thực tế để xem nó thuộc groupId nào
+    const targets = this.#objectManager.getGroupObjects(name);
+    const repName = targets[0]?.name;
+
     document.querySelectorAll('.layer-item').forEach(item => {
-      item.classList.toggle('selected', item.dataset.name === name);
+      // Highlight nếu item này là đại diện cho group chứa 'obj' (đối tượng đầu tiên trong group là key đại diện)
+      item.classList.toggle('selected', item.dataset.name === repName);
     });
+
     const objSel = document.getElementById('mat-object-select');
     if (objSel) objSel.value = name;
-    document.getElementById('selected-obj').textContent = `📌 ${name}`;
+    
+    const statusText = document.getElementById('selected-obj');
+    if (statusText) statusText.textContent = `📌 ${name}`;
   }
 
   #clearSelection() {

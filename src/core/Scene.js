@@ -6,7 +6,7 @@ export class SceneSetup {
 
   constructor() {
     this.instance = new THREE.Scene();
-    this.instance.background = new THREE.Color(0x0a0a14);
+    this.instance.background = new THREE.Color(0xffffff);
     // No fog for performance
   }
 }

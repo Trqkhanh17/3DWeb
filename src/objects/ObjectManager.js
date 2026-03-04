@@ -3,21 +3,19 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { MaterialLibrary } from '../materials/MaterialLibrary.js';
 
-/**
- * ObjectManager – loads the optimized Living Room GLB model (Draco compressed),
- * auto-discovers meshes and groups them by material for UI control.
- */
 export class ObjectManager {
-  objects = [];
+  objects = []; // Danh sách các nhóm vật thể (Sofa, Sàn, Tường...)
 
   #scene;
+  #model; // Lưu lại model để xóa khi load lại
   #onProgress = null;
   #onLoaded   = null;
+  static #IGNORE_GROUPS = ['Scene', 'RootNode', 'Sketchfab_Model', 'OSG_Scene', 'default_scene', 'GLTF_SceneRootNode', 'Object_1', 'Scene_Root'];
 
-  /** Match glTF node patterns to User-facing names */
+  // Giữ nguyên các map tên cũ của bạn
   static #NODE_NAMES = [
-    { pattern: 'Burnt_Log',         name: 'Khúc gỗ trang trĩ' },
-    { Pattern: 'Patterned_Floor',   name: 'Sàn nhà' },
+    { pattern: 'Burnt_Log',         name: 'Khúc gỗ trang trí' },
+    { pattern: 'Patterned_Floor',   name: 'Sàn nhà' },
     { pattern: 'Studded_Leather',    name: 'Bọc da sofa' },
     { pattern: 'Wooden_Bowl',        name: 'Bát gỗ trang trí' },
     { pattern: 'Lamp_',              name: 'Đèn cây' },
@@ -30,10 +28,9 @@ export class ObjectManager {
     { pattern: 'Plastic_Matte',      name: 'Chi tiết nhựa' },
     { pattern: 'Mat',                name: 'Các loại chân/viền khác' }
   ];
-
-  /** Original Material names fallback */
+  
   static #MATERIAL_NAMES = {
-    'Burnt_Log_vcsaeeyfa':        'Khúc gỗ trang trĩ',
+    'Burnt_Log_vcsaeeyfa':        'Khúc gỗ trang trí',
     'Patterned_Floor_tksmdiycw':  'Sàn nhà',
     'Studded_Leather_tlooadar':   'Bọc da sofa',
     'Wooden_Bowl_tfpcbhnra.1':    'Bát gỗ trang trí',
@@ -43,14 +40,14 @@ export class ObjectManager {
     'Mat.3':                      'Gối vuông',
     'Mat.4':                      'Thảm',
     'Mat.4_1':                    'Ngăn kéo gỗ',
-    'Mat.4_2':                    'Ghế đẩu',
-    'Mat.4_3':                    'Sofa/Nệm phụ',
+    // Tắt nhóm config
+    // static FURNITURE_GROUPS = {}; 
     'Mat.5':                      'Tường',
     'Mat.6':                      'Cửa nhôm/kính',
     'Plywood_vdcjfiw.1':          'Ghế bành gỗ',
     'Plywood_vdcjfiw.1_1':        'Kệ sách gỗ',
     'Small_Rocks_ulludayiw':      'Chậu cây',
-    'White_And_Blue_vdkvbea':     'Gối trang trĩ',
+    'White_And_Blue_vdkvbea':     'Gối trang trí',
     'Wooden_Beam_tgngdibfa':      'Kệ treo',
     'Wooden_Beam_tgnhde0fa':      'Kệ TV',
     'Mat_1':                      'Vật nhỏ khác',
@@ -59,32 +56,60 @@ export class ObjectManager {
 
   static #GROUP_COLORS = {
     'Sách':              '#654321',
-    'Khúc gỗ trang trí':'#5C4033',
+    'Khúc gỗ trang trí': '#5C4033',
     'Đèn cây':           '#FFD700',
-    'Đệm ngồi':        '#333333',
+    'Đệm ngồi':          '#333333',
     'Bàn trà':           '#8B7355',
-    'Gối vuông':        '#444444',
-    'Thảm trải':        '#444444',
-    'Tủ ngăn kéo':      '#A0522D',
-    'Ghế đẩu':          '#696969',
-    'Ghế Sofa Da':       '#2d2d2d',
-    'Tường':            '#666666',
-    'Khung cửa':        '#555555',
-    'Ghế đẩu 2':        '#808080',
-    'Sàn nhà':          '#3a3a3a',
-    'Ghế bành gỗ':      '#C4A882',
-    'Kệ sách gỗ':       '#DEB887',
-    'Chậu cây cảnh':     '#228B22',
+    'Sàn nhà':           '#3a3a3a',
     'Bọc da sofa':       '#1a1a1a',
-    'Gối trang trí':     '#4488cc',
-    'Kệ gỗ treo tường': '#A0522D',
-    'Kệ TV gỗ':         '#8B4513',
-    'Bát gỗ trang trí':  '#D2691E',
-    'Vật dụng khác':    '#999999',
-    'Sàn gỗ':            '#4a3a2a',
-    'Bàn ghế gỗ':        '#6B4226',
-    'Chân ghế kim loại':  '#A0A0A0',
+    // ... các màu khác
   };
+
+  /** 
+   * Array lồng nhau để phân nhóm thủ công theo ID (Object_N).
+   * Hỗ trợ cả ID đơn lẻ và dải ID (VD: 'Object_10-20').
+   */
+  static UI_GROUPS = [
+    { 
+      id: 'sofa_group', 
+      label: 'Bộ Ghế Sofa', 
+      members: ['Object_1641','Object_1611', 'Object_1617','Object_1443','Object_1446','Object_1443','Object_1447'] 
+    },
+    { 
+      id: 'wood_decor', 
+      label: 'Gỗ Trang Trí', 
+      members: ['Object_2-8', 'Object_19'] 
+    },
+    { 
+      id: 'wall_group', 
+      label: 'Hệ Tường & Sàn', 
+      members: ['Object_9-17', 'Object_33', 'Object_44'] 
+    },
+    { 
+      id: 'decor_items', 
+      label: 'Đồ Decor Khác', 
+      members: ['Object_21', 'Object_22', 'Object_26', 'Object_48', 'Object_49', 'Object_61-73'] 
+    }
+  ];
+
+  /** Kiểm tra xem một name (Object_N) có thuộc group nào không */
+  static #getManualGroupId(uniqueName) {
+    const num = parseInt(uniqueName.split('_')[1]);
+    if (isNaN(num)) return null;
+
+    for (const group of ObjectManager.UI_GROUPS) {
+      for (const m of group.members) {
+        if (m === uniqueName) return group.id;
+        if (m.includes('-')) {
+          // Xử lý dải ID (VD: 'Object_10-20' hoặc '10-20')
+          const rangeString = m.replace('Object_', '').trim();
+          const [start, end] = rangeString.split('-').map(Number);
+          if (!isNaN(start) && !isNaN(end) && num >= start && num <= end) return group.id;
+        }
+      }
+    }
+    return null;
+  }
 
   constructor(scene, { onProgress, onLoaded } = {}) {
     this.#scene      = scene;
@@ -92,10 +117,99 @@ export class ObjectManager {
     this.#onLoaded   = onLoaded;
   }
 
+  /**
+   * Tách geometry CHỈ KHI mesh có ≤ 4 island VÀ các island thực sự xa nhau.
+   * Tránh tách những mesh có nhiều "island" do cách build geometry (texture holes, v.v.)
+   */
+  static #splitFarIslands(mesh, minSeparation = 0.3) {
+    const geo = mesh.geometry;
+    if (!geo.index) return null;
+
+    const indices = geo.index.array;
+    const pos = geo.attributes.position;
+    const numFaces = indices.length / 3;
+    const numVerts = pos.count;
+
+    // Union-Find
+    const parent = new Int32Array(numVerts).map((_, i) => i);
+    const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+    const union = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
+    for (let i = 0; i < indices.length; i += 3) {
+      union(indices[i], indices[i+1]);
+      union(indices[i+1], indices[i+2]);
+    }
+
+    // Nhóm face theo island
+    const facesByRoot = new Map();
+    for (let f = 0; f < numFaces; f++) {
+      const root = find(indices[f * 3]);
+      if (!facesByRoot.has(root)) facesByRoot.set(root, []);
+      facesByRoot.get(root).push(f);
+    }
+
+    const islandCount = facesByRoot.size;
+    if (islandCount <= 1 || islandCount > 500) return null;
+
+    // Tính tâm để debug
+    const islandData = [];
+    for (const [, faces] of facesByRoot) {
+      const cx = { x: 0, y: 0, z: 0 }; let n = 0;
+      const vertsSeen = new Set();
+      for (const f of faces) {
+        for (let vi = 0; vi < 3; vi++) {
+          const idx = indices[f * 3 + vi];
+          if (!vertsSeen.has(idx)) {
+            vertsSeen.add(idx);
+            cx.x += pos.getX(idx); cx.y += pos.getY(idx); cx.z += pos.getZ(idx); n++;
+          }
+        }
+      }
+      islandData.push({ faces, center: { x: cx.x/n, y: cx.y/n, z: cx.z/n } });
+    }
+
+    console.log(`%c[ObjectManager] Splitting mesh into ${islandCount} islands.`, 'color: #ffa500');
+
+    // Tách thành mesh riêng
+    const attrs = geo.attributes;
+    return islandData.map(({ faces }) => {
+      const newGeo = new THREE.BufferGeometry();
+      const vertMap = new Map(); const newIndices = []; const newAttrs = {};
+      for (const name in attrs) newAttrs[name] = [];
+      for (const f of faces) {
+        for (let vi = 0; vi < 3; vi++) {
+          const oIdx = indices[f * 3 + vi];
+          if (!vertMap.has(oIdx)) {
+            vertMap.set(oIdx, vertMap.size);
+            for (const name in attrs) {
+              const a = attrs[name];
+              for (let k = 0; k < a.itemSize; k++) newAttrs[name].push(a.array[oIdx * a.itemSize + k]);
+            }
+          }
+          newIndices.push(vertMap.get(oIdx));
+        }
+      }
+      for (const name in newAttrs) {
+        const o = attrs[name];
+        newGeo.setAttribute(name, new THREE.BufferAttribute(new Float32Array(newAttrs[name]), o.itemSize, o.normalized));
+      }
+      newGeo.setIndex(newIndices);
+      newGeo.computeBoundingSphere(); newGeo.computeBoundingBox();
+      const m = new THREE.Mesh(newGeo, mesh.material);
+      m.position.copy(mesh.position); m.rotation.copy(mesh.rotation); m.scale.copy(mesh.scale);
+      m.matrix.copy(mesh.matrix); m.layers.mask = mesh.layers.mask;
+      return m;
+    });
+  }
+
   async load() {
+    if (this.#model) {
+      this.#scene.remove(this.#model);
+      this.#model = null;
+    }
+    this.objects = [];
+
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
-    dracoLoader.setDecoderConfig({ type: 'js' }); // JS decoder (works everywhere)
 
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
@@ -103,125 +217,164 @@ export class ObjectManager {
     return new Promise((resolve, reject) => {
       loader.load(
         '/model/living_room/scene_opt.glb',
-
         (gltf) => {
           const model = gltf.scene;
+          this.#model = model;
 
-          // Group meshes by their material name
-          /** @type {Map<string, THREE.Mesh[]>} */
-          const groupMap = new Map();
+          // STAGE 1: Split meshes that have far islands
+          // We do this first so the scene structure is final before we start naming
+          const meshesToSplit = [];
+          model.traverse(node => { if (node.isMesh) meshesToSplit.push(node); });
 
-          model.traverse((child) => {
-            if (!child.isMesh) return;
-            child.castShadow    = false;
-            child.receiveShadow = false;
-            child.frustumCulled = true;
-
-            // Downgrade PBR → Lambert for GPU performance
-            const origMat = child.material;
-            if (origMat.isMeshStandardMaterial || origMat.isMeshPhysicalMaterial) {
-              const lambertMat = new THREE.MeshLambertMaterial({
-                map:        origMat.map,
-                color:      origMat.color,
-                emissive:   origMat.emissive,
-                emissiveMap: origMat.emissiveMap,
-                normalMap:  origMat.normalMap,
-                alphaMap:   origMat.alphaMap,
-                transparent: origMat.transparent,
-                opacity:    origMat.opacity,
-                side:       origMat.side,
-                name:       origMat.name,
-              });
-              child.material = lambertMat;
+          meshesToSplit.forEach(node => {
+            const islands = ObjectManager.#splitFarIslands(node);
+            if (islands && islands.length > 1) {
+              const par = node.parent;
+              if (par) {
+                const idx = par.children.indexOf(node);
+                if (idx !== -1) {
+                  // Thay thế mesh gốc bằng các island
+                  par.children.splice(idx, 1, ...islands);
+                  islands.forEach(m => { m.parent = par; });
+                  node.parent = null;
+                }
+              }
             }
-
-            // Save material for restore
-            child.__origMaterial = child.material;
-
-            // Determine group name primarily from Material matched to our predefined list
-            const matName = origMat?.name ?? 'default';
-            const nodeName = child.name || 'default';
-
-            let groupName = ObjectManager.#MATERIAL_NAMES[matName];
-            if (!groupName) {
-               // Try matching by node name
-               const matched = ObjectManager.#NODE_NAMES.find(n => nodeName.includes(n.pattern));
-               groupName = matched ? matched.name : (matName !== 'default' ? matName : child.name);
-            }
-
-            if (!groupMap.has(groupName)) groupMap.set(groupName, []);
-            groupMap.get(groupName).push(child);
           });
 
-          // Freeze matrices (static scene)
+          // STAGE 2: Register objects and assign unique names
+          let counter = 1;
+          this.objects = [];
+
+          model.traverse((node) => {
+            // Store original name before we overwrite it, for grouping decisions
+            if (node.__origName === undefined) node.__origName = node.name || '';
+            
+            const uniqueName = `Object_${counter++}`;
+            node.name = uniqueName;
+
+            if (node.isMesh) {
+              node.material = node.material.clone();
+              node.castShadow    = false;
+              node.receiveShadow = false;
+              node.frustumCulled = true;
+
+              const oldMat = node.material;
+              const lambertMat = new THREE.MeshLambertMaterial().copy(oldMat);
+              lambertMat.map = oldMat.map;
+              node.material = lambertMat;
+              node.__origMaterial = node.material.clone();
+
+              const matName = oldMat.name || '';
+              const vietName = ObjectManager.#MATERIAL_NAMES[matName] || 'Khác';
+              
+              // Use ORIGINAL parent name for grouping
+              const parentOrigName = node.parent?.__origName || '';
+              
+              // 1. Kiểm tra nhóm thủ công (Manual Group) trước
+              let groupId = ObjectManager.#getManualGroupId(uniqueName);
+
+              // 2. Nếu không có nhóm thủ công, mới dùng parent cũ
+              if (!groupId) {
+                  groupId = (node.parent && node.parent !== model) ? node.parent.name : null;
+                  // Don't group if parent is the root or has a generic/ignore name
+                  if (groupId && (ObjectManager.#IGNORE_GROUPS.includes(parentOrigName) || parentOrigName.startsWith('Object_'))) {
+                    groupId = null;
+                  }
+              }
+
+              this.objects.push({
+                name:    uniqueName,
+                label:   vietName,
+                groupId: groupId,
+                groupLabel: ObjectManager.UI_GROUPS.find(g => g.id === groupId)?.label || vietName,
+                color:   ObjectManager.#GROUP_COLORS[vietName] ?? '#888',
+                meshes:  [node],
+                visible: true,
+                _matType: 'original',
+              });
+            }
+          });
+
+          console.log(`%c Tổng ${this.objects.length} object (sau refactor). `, 'background: #222; color: #00d4aa');
+
+          // Đóng băng ma trận cho cảnh tĩnh
           model.updateMatrixWorld(true);
           model.traverse((child) => { child.matrixAutoUpdate = false; });
 
-          // Build objects list
-          for (const [name, meshes] of groupMap) {
-            this.objects.push({
-              name,
-              color:    ObjectManager.#GROUP_COLORS[name] ?? '#888',
-              meshes,
-              visible:  true,
-              _matType: 'original',
-            });
-          }
-
           this.#scene.add(model);
-
-          // Cleanup Draco decoder
           dracoLoader.dispose();
-
           if (this.#onLoaded) this.#onLoaded();
           resolve();
         },
-
-        (xhr) => {
-          if (xhr.total > 0 && this.#onProgress) {
-            this.#onProgress(Math.round((xhr.loaded / xhr.total) * 100));
-          }
-        },
-
+        null,
         (err) => { console.error('GLB load error:', err); reject(err); }
       );
     });
   }
 
+  /** Lấy tất cả objects cùng nhóm nội thất */
+  getGroupObjects(name) {
+    const obj = this.objects.find(o => o.name === name);
+    if (!obj || !obj.groupId) return obj ? [obj] : [];
+    return this.objects.filter(o => o.groupId === obj.groupId);
+  }
+
   /**
-   * Apply material to all meshes of a furniture group.
-   * 'original' → restore original material.
+   * Áp dụng material cho tất cả mảnh trong cùng nhóm
    */
   applyMaterial(name, type, color, roughness, metalness) {
-    const obj = this.objects.find(o => o.name === name);
-    if (!obj) return;
-
-    for (const mesh of obj.meshes) {
-      if (type === 'original') {
-        if (mesh.__origMaterial) {
-          if (mesh.material !== mesh.__origMaterial) mesh.material.dispose();
-          mesh.material = mesh.__origMaterial;
+    const targets = this.getGroupObjects(name);
+    targets.forEach(obj => {
+      obj._matType = type;
+      obj.meshes.forEach(mesh => {
+        if (type === 'original') {
+          mesh.material.copy(mesh.__origMaterial);
+        } else {
+          const newMat = MaterialLibrary.create(type, color, roughness, metalness);
+          if (mesh.material.type === newMat.type) {
+            if (color)      mesh.material.color.set(color);
+            if (roughness  !== undefined) mesh.material.roughness  = roughness;
+            if (metalness  !== undefined) mesh.material.metalness  = metalness;
+          } else {
+            mesh.material = newMat;
+          }
         }
-      } else if (type === obj._matType && mesh.material.color != null) {
-        mesh.material.color.set(color);
-        if (mesh.material.roughness !== undefined) mesh.material.roughness = roughness;
-        if (mesh.material.metalness !== undefined) mesh.material.metalness = metalness;
         mesh.material.needsUpdate = true;
-      } else {
-        const newMat = MaterialLibrary.create(type, color, roughness, metalness);
-        if (mesh.material !== mesh.__origMaterial) mesh.material.dispose();
-        mesh.material = newMat;
-      }
-    }
-    obj._matType = type;
+      });
+    });
   }
 
   setVisible(name, visible) {
-    const obj = this.objects.find(o => o.name === name);
-    if (!obj) return;
-    obj.visible = visible;
-    obj.meshes.forEach(m => (m.visible = visible));
+    const targets = this.getGroupObjects(name);
+    targets.forEach(obj => {
+      obj.visible = visible;
+      obj.meshes.forEach(m => (m.visible = visible));
+    });
   }
 
-  update(_delta) {}
+  /**
+   * Highlights objects by briefly changing their emissive color.
+   */
+  highlightObjects(names, duration = 800) {
+    names.forEach(name => {
+      const targets = this.getGroupObjects(name);
+      targets.forEach(obj => {
+        obj.meshes.forEach(mesh => {
+          if (!mesh.material) return;
+          if (mesh.__origEmissive === undefined) {
+            mesh.__origEmissive = mesh.material.emissive ? mesh.material.emissive.clone() : new THREE.Color(0x000000);
+          }
+          mesh.material.emissive.set(0xff3333);
+          mesh.material.emissiveIntensity = 1.0;
+          setTimeout(() => {
+            if (mesh.material && mesh.material.emissive) {
+              mesh.material.emissive.copy(mesh.__origEmissive);
+              mesh.material.emissiveIntensity = 0.0;
+            }
+          }, duration);
+        });
+      });
+    });
+  }
 }

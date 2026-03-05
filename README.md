@@ -179,5 +179,10 @@ Thư mục `dist/` chứa toàn bộ static files, có thể deploy lên **GitHu
 
 ## 👥 Nhóm thực hiện
 
-> Chuyên đề: **Thiết kế và Lập trình Đồ họa Nâng cao** – 2 SV  
+> Chuyên đề: **Thiết kế và Lập trình Đồ họa Nâng cao**
+> Thành viên:
+>
+> - Nguyễn Ngọc Hải Đăng - 2115244
+> - Trần Quốc Khánh - 2115244
+>
 > Công cụ: Three.js · Vite · GLTF/GLB · Blender · Lighthouse · Spector.js

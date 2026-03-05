@@ -9,10 +9,12 @@ export class UIPanel {
 
   constructor(objectManager, lightSystem) {
     this.#objectManager = objectManager;
-    this.#lightSystem   = lightSystem;
+    this.#lightSystem = lightSystem;
 
     // Seed _matType so in-place update works from first change
-    objectManager.objects.forEach(o => { o._matType = 'standard'; });
+    objectManager.objects.forEach((o) => {
+      o._matType = 'standard';
+    });
 
     this.#initTabs();
     this.#initPanel();
@@ -25,10 +27,10 @@ export class UIPanel {
 
   /* ─── Tabs ─────────────────────────────────── */
   #initTabs() {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add('active');
       });
@@ -37,7 +39,7 @@ export class UIPanel {
 
   /* ─── Panel collapse ────────────────────────── */
   #initPanel() {
-    const panel     = document.getElementById('control-panel');
+    const panel = document.getElementById('control-panel');
     const toggleBtn = document.getElementById('panel-toggle');
 
     toggleBtn?.addEventListener('click', () => {
@@ -58,7 +60,7 @@ export class UIPanel {
     const seen = new Set();
     const entries = []; // [{ repName, groupId, color, count }]
 
-    this.#objectManager.objects.forEach(obj => {
+    this.#objectManager.objects.forEach((obj) => {
       // CHỈ xử lý các object thuộc về một nhóm (groupId không null)
       if (!obj.groupId) return;
 
@@ -66,21 +68,24 @@ export class UIPanel {
       if (seen.has(key)) return;
       seen.add(key);
 
-      const count = this.#objectManager.objects.filter(o => o.groupId === obj.groupId).length;
+      const count = this.#objectManager.objects.filter((o) => o.groupId === obj.groupId).length;
       entries.push({ repName: obj.name, groupId: obj.groupId, color: obj.color, count, label: obj.groupLabel });
     });
 
-    console.log(`%c [UI] Hiển thị ${entries.length} nhóm được định nghĩa (${this.#objectManager.objects.length} mảnh tổng cộng) `, 'color: #7c6bff');
+    console.log(
+      `%c [UI] Hiển thị ${entries.length} nhóm được định nghĩa (${this.#objectManager.objects.length} mảnh tổng cộng) `,
+      'color: #7c6bff',
+    );
 
     entries.forEach(({ repName, count, color, label }) => {
-      const displayName = count > 1 ? `${label} (Nhóm)` : `${label} (${repName})`;
+      const displayName = label;
 
       const item = document.createElement('div');
       item.className = 'layer-item';
       item.dataset.name = repName;
       item.innerHTML = `
         <span class="layer-color" style="background:${color}"></span>
-        <span class="layer-name">${displayName}${count > 1 ? ` <em class="group-badge">${count}</em>` : ''}</span>
+        <span class="layer-name">${displayName}</span>
         <button class="layer-toggle" title="Ẩn/Hiện nhóm">👁</button>
       `;
 
@@ -103,19 +108,19 @@ export class UIPanel {
 
   /* ─── Material Panel ────────────────────────── */
   #initMaterialPanel() {
-    const roughSlider  = document.getElementById('mat-roughness');
-    const metalSlider  = document.getElementById('mat-metalness');
-    const colorPicker  = document.getElementById('mat-color');
-    const roughVal     = document.getElementById('roughness-val');
-    const metalVal     = document.getElementById('metalness-val');
-    const colorHex     = document.getElementById('mat-color-hex');
-    const typeSelect   = document.getElementById('mat-type-select');
-    const objSelect    = document.getElementById('mat-object-select');
+    const roughSlider = document.getElementById('mat-roughness');
+    const metalSlider = document.getElementById('mat-metalness');
+    const colorPicker = document.getElementById('mat-color');
+    const roughVal = document.getElementById('roughness-val');
+    const metalVal = document.getElementById('metalness-val');
+    const colorHex = document.getElementById('mat-color-hex');
+    const typeSelect = document.getElementById('mat-type-select');
+    const objSelect = document.getElementById('mat-object-select');
 
     // Helper: apply current panel state to selected object immediately
     const applyNow = () => {
-      const name  = objSelect?.value;
-      const type  = typeSelect?.value ?? 'standard';
+      const name = objSelect?.value;
+      const type = typeSelect?.value ?? 'standard';
       const color = colorPicker?.value ?? '#ffffff';
       const rough = parseFloat(roughSlider?.value ?? 0.5);
       const metal = parseFloat(metalSlider?.value ?? 0.0);
@@ -131,18 +136,25 @@ export class UIPanel {
       metalVal.textContent = parseFloat(metalSlider.value).toFixed(2);
       applyNow();
     });
-    colorPicker?.addEventListener('input',  () => { colorHex.textContent = colorPicker.value; applyNow(); });
-    colorPicker?.addEventListener('change', () => { colorHex.textContent = colorPicker.value; applyNow(); });
+    colorPicker?.addEventListener('input', () => {
+      colorHex.textContent = colorPicker.value;
+      applyNow();
+    });
+    colorPicker?.addEventListener('change', () => {
+      colorHex.textContent = colorPicker.value;
+      applyNow();
+    });
 
     // Show/hide controls based on material type
     const updateVisibility = () => {
       const type = typeSelect.value;
       const isOriginal = type === 'original';
-      const showColor   = !isOriginal && type !== 'normal';
-      const showRough   = ['standard', 'phong'].includes(type);
-      const showMetal   = type === 'standard';
+      const showColor = !isOriginal && type !== 'normal';
+      const showRough = ['standard', 'phong'].includes(type);
+      const showMetal = type === 'standard';
 
-      document.querySelector('.color-row')?.parentElement && (document.querySelector('.color-row').parentElement.style.display = showColor ? '' : 'none');
+      document.querySelector('.color-row')?.parentElement &&
+        (document.querySelector('.color-row').parentElement.style.display = showColor ? '' : 'none');
       document.getElementById('roughness-group').style.display = showRough ? '' : 'none';
       document.getElementById('metalness-group').style.display = showMetal ? '' : 'none';
     };
@@ -163,7 +175,7 @@ export class UIPanel {
     sel.innerHTML = ''; // Clear existing options
 
     const seen = new Set();
-    this.#objectManager.objects.forEach(obj => {
+    this.#objectManager.objects.forEach((obj) => {
       if (!obj.groupId) return;
       const key = obj.groupId;
       if (seen.has(key)) return;
@@ -179,16 +191,34 @@ export class UIPanel {
   /* ─── Light Panel ───────────────────────────── */
   #initLightPanel() {
     const config = [
-      { key: 'ambient',     toggleId: 'ambient-toggle', intId: 'ambient-intensity', intValId: 'ambient-int-val' },
-      { key: 'directional', toggleId: 'dir-toggle',     intId: 'dir-intensity',     intValId: 'dir-int-val', colorId: 'dir-color' },
-      { key: 'point',       toggleId: 'point-toggle',   intId: 'point-intensity',   intValId: 'point-int-val', colorId: 'point-color' },
-      { key: 'spot',        toggleId: 'spot-toggle',    intId: 'spot-intensity',    intValId: 'spot-int-val',  colorId: 'spot-color'  },
+      { key: 'ambient', toggleId: 'ambient-toggle', intId: 'ambient-intensity', intValId: 'ambient-int-val' },
+      {
+        key: 'directional',
+        toggleId: 'dir-toggle',
+        intId: 'dir-intensity',
+        intValId: 'dir-int-val',
+        colorId: 'dir-color',
+      },
+      {
+        key: 'point',
+        toggleId: 'point-toggle',
+        intId: 'point-intensity',
+        intValId: 'point-int-val',
+        colorId: 'point-color',
+      },
+      {
+        key: 'spot',
+        toggleId: 'spot-toggle',
+        intId: 'spot-intensity',
+        intValId: 'spot-int-val',
+        colorId: 'spot-color',
+      },
     ];
 
     for (const cfg of config) {
       const toggle = document.getElementById(cfg.toggleId);
       const intSlider = document.getElementById(cfg.intId);
-      const intVal    = document.getElementById(cfg.intValId);
+      const intVal = document.getElementById(cfg.intValId);
       const colorPick = cfg.colorId ? document.getElementById(cfg.colorId) : null;
 
       toggle?.addEventListener('change', () => {
@@ -239,25 +269,25 @@ export class UIPanel {
 
   #selectObject(name) {
     this.#selectedObject = name;
-    
+
     // Tìm object thực tế để xem nó thuộc groupId nào
     const targets = this.#objectManager.getGroupObjects(name);
     const repName = targets[0]?.name;
 
-    document.querySelectorAll('.layer-item').forEach(item => {
+    document.querySelectorAll('.layer-item').forEach((item) => {
       // Highlight nếu item này là đại diện cho group chứa 'obj' (đối tượng đầu tiên trong group là key đại diện)
       item.classList.toggle('selected', item.dataset.name === repName);
     });
 
     const objSel = document.getElementById('mat-object-select');
     if (objSel) objSel.value = name;
-    
+
     const statusText = document.getElementById('selected-obj');
     if (statusText) statusText.textContent = `📌 ${name}`;
   }
 
   #clearSelection() {
     this.#selectedObject = null;
-    document.querySelectorAll('.layer-item').forEach(item => item.classList.remove('selected'));
+    document.querySelectorAll('.layer-item').forEach((item) => item.classList.remove('selected'));
   }
 }

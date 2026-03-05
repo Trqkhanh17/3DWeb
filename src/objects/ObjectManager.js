@@ -88,21 +88,16 @@ export class ObjectManager {
     for (const group of UI_GROUPS) {
       for (const m of group.members) {
         if (m === uniqueName) {
-          console.log(`[DEBUG] SUCCESS match: ${uniqueName} in ${group.id}`);
           return group.id;
         }
         if (m.includes('-')) {
           const rangeString = m.replace('Object_', '').trim();
           const [start, end] = rangeString.split('-').map(Number);
           if (!isNaN(start) && !isNaN(end) && num >= start && num <= end) {
-            console.log(`[DEBUG] SUCCESS range match: ${uniqueName} in ${group.id} (range ${m})`);
             return group.id;
           }
         }
       }
-    }
-    if (uniqueName === 'Object_1611' || uniqueName === 'Object_1615') {
-      console.log(`[DEBUG] FAIL match: ${uniqueName} not found in any of ${UI_GROUPS.length} groups.`);
     }
     return null;
   }
@@ -378,7 +373,6 @@ export class ObjectManager {
 
   setVisible(name, visible) {
     const targets = this.getGroupObjects(name);
-    console.log(`[ObjectManager] setVisible("${name}", ${visible}). Targets found: ${targets.length}`);
     targets.forEach((obj) => {
       obj.visible = visible;
       obj.meshes.forEach((m) => (m.visible = visible));

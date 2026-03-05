@@ -135,7 +135,6 @@ export const UI_GROUPS = [
       'Object_474',
       'Object_472',
       'Object_473',
-      'Object_473',
       'Object_476',
       'Object_475',
       'Object_13',

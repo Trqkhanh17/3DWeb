@@ -80,20 +80,27 @@ export class ObjectManager {
    * Hỗ trợ cả ID đơn lẻ và dải ID (VD: 'Object_10-20').
    */
 
-  /** Kiểm tra xem một name (Object_N) có thuộc group nào không */
-  static #getManualGroupId(uniqueName) {
-    const num = parseInt(uniqueName.split('_')[1]);
-    if (isNaN(num)) return null;
+  static #parseObjectNumber(name) {
+    if (!name || typeof name !== 'string') return null;
+    const match = name.match(/^Object_(\d+)$/);
+    return match ? Number(match[1]) : null;
+  }
+
+  /** Kiểm tra xem một object có thuộc group cấu hình thủ công hay không */
+  static #getManualGroupId(...candidateNames) {
+    const numbers = candidateNames
+      .map((name) => ObjectManager.#parseObjectNumber(name))
+      .filter((num) => num !== null);
 
     for (const group of UI_GROUPS) {
       for (const m of group.members) {
-        if (m === uniqueName) {
+        if (candidateNames.includes(m)) {
           return group.id;
         }
         if (m.includes('-')) {
           const rangeString = m.replace('Object_', '').trim();
           const [start, end] = rangeString.split('-').map(Number);
-          if (!isNaN(start) && !isNaN(end) && num >= start && num <= end) {
+          if (!isNaN(start) && !isNaN(end) && numbers.some((num) => num >= start && num <= end)) {
             return group.id;
           }
         }
@@ -285,30 +292,16 @@ export class ObjectManager {
 
               const matName = oldMat.name || '';
               const vietName = ObjectManager.#MATERIAL_NAMES[matName] || 'Khác';
-
-              // Use ORIGINAL parent name for grouping
-              const parentOrigName = node.parent?.__origName || '';
-
-              // 1. Kiểm tra nhóm thủ công (Manual Group) trước
-              let groupId = ObjectManager.#getManualGroupId(uniqueName);
-
-              // 2. Nếu không có nhóm thủ công, mới dùng parent cũ
-              if (!groupId) {
-                groupId = node.parent && node.parent !== model ? node.parent.name : null;
-                // Don't group if parent is the root or has a generic/ignore name
-                if (
-                  groupId &&
-                  (ObjectManager.#IGNORE_GROUPS.includes(parentOrigName) || parentOrigName.startsWith('Object_'))
-                ) {
-                  groupId = null;
-                }
-              }
+              const sourceName = node.__origName || uniqueName;
+              let groupId = ObjectManager.#getManualGroupId(uniqueName, sourceName);
+              let groupLabel = UI_GROUPS.find((g) => g.id === groupId)?.label || vietName;
 
               this.objects.push({
                 name: uniqueName,
+                sourceName,
                 label: vietName,
-                groupId: groupId,
-                groupLabel: UI_GROUPS.find((g) => g.id === groupId)?.label || vietName,
+                groupId,
+                groupLabel,
                 color: ObjectManager.#GROUP_COLORS[vietName] ?? '#888',
                 meshes: [node],
                 visible: true,

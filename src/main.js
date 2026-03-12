@@ -1,13 +1,13 @@
 import './styles/main.css';
-import { Renderer }       from './core/Renderer.js';
-import { SceneSetup }     from './core/Scene.js';
-import { Camera }         from './core/Camera.js';
-import { OrbitControls }  from './controls/OrbitControls.js';
-import { LightSystem }    from './lights/LightSystem.js';
-import { ObjectManager }  from './objects/ObjectManager.js';
-import { UIPanel }        from './ui/UIPanel.js';
-import { Performance }    from './utils/Performance.js';
-import { Picker }         from './utils/Picker.js';
+import { Renderer } from './core/Renderer.js';
+import { SceneSetup } from './core/Scene.js';
+import { Camera } from './core/Camera.js';
+import { OrbitControls } from './controls/OrbitControls.js';
+import { LightSystem } from './lights/LightSystem.js';
+import { ObjectManager } from './objects/ObjectManager.js';
+import { UIPanel } from './ui/UIPanel.js';
+import { Performance } from './utils/Performance.js';
+import { Picker } from './utils/Picker.js';
 
 class App {
   #requestID;
@@ -26,14 +26,14 @@ class App {
     // ── Pre-Cleanup ───────────────────────────────
     // Nếu đã có App chạy (do HMR), dừng nó lại trước khi tạo cái mới
     if (window.__currentApp) {
-        window.__currentApp.dispose();
+      window.__currentApp.dispose();
     }
     window.__currentApp = this;
 
     // ── Core ──────────────────────────────────────
-    const canvas   = document.getElementById('three-canvas');
+    const canvas = document.getElementById('three-canvas');
     this.#renderer = new Renderer(canvas);
-    const { instance: scene }  = new SceneSetup();
+    const { instance: scene } = new SceneSetup();
     this.#scene = scene;
     const { instance: camera } = new Camera();
 
@@ -65,8 +65,8 @@ class App {
     }
 
     // ── Picker ────────────────────────────────────
-    const allMeshes = objectManager.objects.flatMap(o =>
-      o.meshes.map(mesh => ({ mesh, name: o.name, label: o.label }))
+    const allMeshes = objectManager.objects.flatMap((o) =>
+      o.meshes.map((mesh) => ({ mesh, name: o.name, label: o.label })),
     );
     this.#picker = new Picker(camera, allMeshes, canvas);
 
@@ -107,23 +107,23 @@ class App {
     console.log('[App] Đang dọn dẹp App cũ...');
     if (this.#requestID) cancelAnimationFrame(this.#requestID);
     if (this._onResize) window.removeEventListener('resize', this._onResize);
-    
+
     if (this.#picker) this.#picker.dispose();
     if (this.#uiPanel) this.#uiPanel.dispose();
-    
+
     if (this.#renderer) {
-        this.#renderer.instance.dispose();
-        this.#renderer.instance.forceContextLoss();
+      this.#renderer.instance.dispose();
+      this.#renderer.instance.forceContextLoss();
     }
-    
+
     // Xóa trắng canvas
     const canvas = document.getElementById('three-canvas');
     if (canvas) {
-        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-        if (gl) {
-            gl.clearColor(0, 0, 0, 1);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-        }
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      if (gl) {
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+      }
     }
   }
 

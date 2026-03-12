@@ -1,188 +1,182 @@
-# 🏠 Nội Thất 3D – Interactive Showcase
+# TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT VĨNH LONG
 
-> **Chuyên đề: Thiết kế và Lập trình Đồ họa Nâng cao**  
-> Xây dựng ứng dụng Web 3D tương tác với Three.js + Vite, cho phép khám phá và tùy chỉnh không gian nội thất thời gian thực.
+# XÂY DỰNG WEBSITE 3D TƯƠNG TÁC CHO KHÔNG GIAN NỘI THẤT PHÒNG KHÁCH
 
----
+## Nhóm sinh viên thực hiện
 
-## 🚀 Demo nhanh
+- Nguyễn Ngọc Hải Đăng - 23029048
+- Lê Mộng Bình - 23029053
+- Đỗ Thị Thuý Ngân - 23029045
+
+## 1. Giới thiệu đề tài
+
+Đồ án tập trung xây dựng một website 3D tương tác mô phỏng không gian nội thất phòng khách trên nền tảng web. Người dùng có thể quan sát cảnh theo nhiều góc nhìn, chọn nhóm nội thất, thay đổi vật liệu bề mặt và điều chỉnh hệ thống ánh sáng theo thời gian thực.
+
+Mục tiêu của đề tài là ứng dụng kiến thức đồ họa máy tính và WebGL thông qua thư viện Three.js để tạo ra một sản phẩm trực quan, có tính tương tác, dễ trình diễn và đáp ứng các yêu cầu cơ bản của chuyên đề Thiết kế và Lập trình Đồ họa Nâng cao.
+
+## 2. Mục tiêu thực hiện
+
+- Xây dựng một cảnh 3D nội thất có thể hiển thị trực tiếp trên trình duyệt.
+- Cho phép người dùng xoay, zoom và quan sát mô hình tự do.
+- Tổ chức mô hình thành nhiều nhóm đối tượng để bật hoặc tắt theo từng cụm.
+- Hỗ trợ thay đổi vật liệu của đối tượng trong thời gian thực.
+- Hỗ trợ điều chỉnh nhiều loại ánh sáng trong cảnh.
+- Tối ưu hiệu năng để cảnh hoạt động ổn định trên thiết bị phổ thông.
+
+## 3. Công nghệ sử dụng
+
+- `Three.js`: thư viện dựng đồ họa 3D trên nền WebGL.
+- `Vite`: công cụ dev server và build dự án frontend.
+- `GLTFLoader` và `DRACOLoader`: tải mô hình GLB/GLTF và giải nén mesh tối ưu.
+- `OrbitControls`: hỗ trợ xoay, zoom, pan camera bằng chuột.
+- `HTML/CSS/JavaScript ES6`: xây dựng giao diện điều khiển và logic ứng dụng.
+
+## 4. Chức năng chính của hệ thống
+
+### 4.1. Hiển thị cảnh 3D nội thất
+
+Hệ thống tải mô hình không gian nội thất phòng khách từ file GLB và hiển thị trực tiếp trên canvas WebGL.
+
+### 4.2. Tương tác camera
+
+Người dùng có thể:
+
+- Kéo chuột trái để xoay góc nhìn.
+- Cuộn chuột để phóng to hoặc thu nhỏ.
+- Kéo chuột phải để pan cảnh.
+
+### 4.3. Quản lý nhóm đối tượng
+
+Mô hình được chia thành nhiều nhóm để phục vụ thao tác trong giao diện. Người dùng có thể bật hoặc tắt từng nhóm nội thất để quan sát rõ hơn từng phần của cảnh.
+
+### 4.4. Thay đổi vật liệu thời gian thực
+
+Ứng dụng hỗ trợ thay đổi vật liệu cho các nhóm đối tượng với các kiểu:
+
+- Original
+- Standard
+- Phong
+- Toon
+- Wireframe
+- Normal
+
+Người dùng cũng có thể thay đổi màu sắc, roughness và metalness đối với các vật liệu phù hợp.
+
+### 4.5. Điều chỉnh ánh sáng
+
+Hệ thống ánh sáng bao gồm:
+
+- Ambient Light
+- Directional Light
+- Point Light
+- Spot Light
+
+Người dùng có thể bật hoặc tắt đèn, chỉnh cường độ và đổi màu trực tiếp từ giao diện.
+
+### 4.6. Chọn đối tượng trong cảnh
+
+Ứng dụng sử dụng raycasting để nhận diện đối tượng khi người dùng click vào mô hình. Tên đối tượng đang chọn sẽ được hiển thị trên giao diện.
+
+### 4.7. Theo dõi hiệu năng
+
+Giao diện có khu vực hiển thị FPS và trạng thái render để hỗ trợ đánh giá hiệu năng khi trình diễn.
+
+## 5. Cấu trúc thư mục chính
+
+```text
+3d/
+├── index.html
+├── package.json
+├── vite.config.js
+├── public/
+│   └── model/
+│       └── living_room/
+└── src/
+    ├── main.js
+    ├── config/
+    ├── controls/
+    ├── core/
+    ├── lights/
+    ├── materials/
+    ├── objects/
+    ├── styles/
+    ├── ui/
+    └── utils/
+```
+
+## 6. Mô tả các thành phần chính trong source code
+
+- `src/main.js`: khởi tạo toàn bộ ứng dụng, scene, camera, renderer, object manager, UI và vòng lặp render.
+- `src/core/Renderer.js`: cấu hình WebGLRenderer.
+- `src/core/Scene.js`: khởi tạo scene.
+- `src/core/Camera.js`: thiết lập camera phối cảnh.
+- `src/controls/OrbitControls.js`: điều khiển camera.
+- `src/objects/ObjectManager.js`: tải mô hình, xử lý mesh, chia nhóm đối tượng, đổi vật liệu và bật tắt hiển thị.
+- `src/lights/LightSystem.js`: xây dựng và điều khiển hệ thống ánh sáng.
+- `src/ui/UIPanel.js`: xử lý giao diện điều khiển.
+- `src/utils/Picker.js`: chọn đối tượng bằng raycaster.
+- `src/utils/Performance.js`: hiển thị thông tin hiệu năng.
+
+## 7. Hướng dẫn chạy dự án
+
+### Cài đặt thư viện
 
 ```bash
 npm install
+```
+
+### Chạy môi trường phát triển
+
+```bash
 npm run dev
 ```
 
-Mở trình duyệt tại `http://localhost:5173`
+Sau đó mở trình duyệt tại địa chỉ:
 
----
-
-## 🛠 Công nghệ sử dụng
-
-- **Three.js** – Engine đồ họa 3D (Scene, Camera, Renderer, Lights, Materials)
-- **Vite** – Dev server + bundler cực nhanh
-- **DRACO Loader** – Giải nén và tải mô hình GLB/GLTF nhanh hơn
-- **OrbitControls** – Điều khiển camera xoay/zoom bằng chuột hoặc cảm ứng
-- **Blender** – Tạo và xuất mô hình 3D định dạng GLB
-- **Lighthouse / Spector.js** – Kiểm tra hiệu năng tải trang và draw calls
-
----
-
-## 📁 Cấu trúc thư mục
-
-```
-3d/
-├── index.html              # Entry HTML, chứa toàn bộ UI tĩnh
-├── vite.config.js          # Cấu hình Vite
-├── public/
-│   └── models/             # File mô hình .glb
-└── src/
-    ├── main.js             # Điểm khởi động ứng dụng
-    ├── config/
-    │   └── uiGroups.js     # Cấu hình nhóm đối tượng (Sofa, Đèn, Tường…)
-    ├── core/
-    │   ├── Renderer.js     # Khởi tạo WebGL Renderer
-    │   ├── Scene.js        # Khởi tạo Scene + fog/background
-    │   └── Camera.js       # PerspectiveCamera
-    ├── controls/
-    │   └── OrbitControls.js
-    ├── lights/
-    │   └── LightSystem.js  # Ambient, Directional, Point, Spot
-    ├── objects/
-    │   └── ObjectManager.js # Tải GLB, phân nhóm, quản lý mesh
-    ├── materials/
-    │   └── MaterialFactory.js # Tạo các loại vật liệu (Standard, Phong, Toon…)
-    ├── ui/
-    │   └── UIPanel.js      # Xử lý sự kiện bảng điều khiển
-    ├── utils/
-    │   ├── Performance.js  # Hiển thị FPS, Draw Calls
-    │   └── Picker.js       # Raycasting – click chọn đối tượng
-    └── styles/
-        └── main.css
+```text
+http://localhost:5173
 ```
 
----
-
-## 🎮 Hướng dẫn sử dụng
-
-### 1. Điều hướng camera
-
-- **Kéo chuột trái** – Xoay góc nhìn quanh cảnh
-- **Cuộn chuột giữa** – Zoom in / zoom out
-- **Kéo chuột phải** – Di chuyển (pan) điểm nhìn
-- **Click vào vật thể** – Chọn và hiển thị tên đối tượng ở thanh đáy
-
----
-
-### 2. Bảng điều khiển bên phải (⚙ Control Panel)
-
-Nhấn nút **‹ / ›** ở cạnh trái bảng để thu gọn hoặc mở rộng panel.
-
-Panel gồm **3 tab**:
-
----
-
-#### 📦 Tab "Vật thể" – Bật/tắt nhóm đối tượng
-
-Danh sách các nhóm được cấu hình trong `uiGroups.js`:
-
-- **Bộ Ghế Sofa** – Toàn bộ mesh thuộc bộ ghế sofa
-- **Đèn Cây** – Hệ thống đèn trang trí trong phòng
-- **Hệ Tường & Sàn** – Tường, sàn nhà
-- **Đồ Decor Khác** – Các vật trang trí còn lại
-
-**Cách dùng:** Gạt toggle ☑ cạnh tên nhóm để **hiện / ẩn** toàn bộ nhóm đó trong cảnh.
-
----
-
-#### 🎨 Tab "Vật liệu" – Thay đổi vật liệu thời gian thực
-
-1. **Chọn đối tượng** trong dropdown (hoặc click trực tiếp lên mesh trong cảnh).
-2. **Chọn loại vật liệu**:
-   - 🔄 **Gốc (Original)** – Giữ nguyên vật liệu gốc từ file GLB
-   - **Standard (PBR)** – Vật liệu vật lý thực tế, hỗ trợ Roughness & Metalness
-   - **Phong (Shiny)** – Bề mặt bóng kiểu cổ điển
-   - **Toon (Cel-shading)** – Hiệu ứng hoạt hình / cartoon
-   - **Wireframe** – Hiển thị khung lưới tam giác
-   - **Normal Map** – Hiển thị bản đồ pháp tuyến (debug)
-3. **Chỉnh màu sắc** bằng color picker.
-4. Với loại **Standard / Phong**, điều chỉnh thêm:
-   - **Roughness** (0 = bóng loáng → 1 = mờ đục)
-   - **Metalness** (0 = nhựa → 1 = kim loại)
-5. Nhấn **✓ Áp dụng vật liệu** để xác nhận.
-
----
-
-#### 💡 Tab "Ánh sáng" – Điều chỉnh hệ thống đèn
-
-Có **4 loại đèn** độc lập:
-
-- 🌐 **Ambient Light** – Ánh sáng môi trường, chiếu đều toàn cảnh
-- ☀️ **Directional Light** – Ánh sáng mặt trời (song song, có phương)
-- 💡 **Point Light** – Đèn điểm tỏa ra mọi hướng (như bóng đèn)
-- 🔦 **Spot Light** – Đèn rọi theo hình nón (như đèn sân khấu)
-
-Với mỗi đèn có thể:
-
-- **Bật / tắt** bằng toggle switch.
-- **Kéo slider Cường độ** để thay đổi độ sáng.
-- **Chọn màu** đèn bằng color picker (trừ Ambient).
-
----
-
-### 3. Thanh thông tin phía trên (Top Bar)
-
-Góc trên phải hiển thị chỉ số hiệu năng thời gian thực:
-
-- **FPS** – Số khung hình mỗi giây (≥ 45 FPS là đạt yêu cầu).
-- **DC** – Số Draw Calls (mục tiêu ≤ 300).
-
----
-
-### 4. Thanh trạng thái phía dưới (Bottom Bar)
-
-- Nhắc nhở thao tác chuột.
-- Hiển thị **tên đối tượng đang được chọn** sau khi click vào mesh.
-
----
-
-## 📋 Checklist yêu cầu chuyên đề
-
-- ✅ **Website 3D có bảng điều khiển UI** – Panel bên phải với 3 tab
-- ✅ **Thay đổi vật liệu theo thời gian thực** – Tab Vật liệu, 5 loại vật liệu
-- ✅ **Thay đổi ánh sáng theo thời gian thực** – Tab Ánh sáng, 4 loại đèn
-- ✅ **Thời gian tải < 5s (mạng 20 Mbps)** – DRACO + GLB tối ưu
-- ✅ **Cảnh ≥ 10 đối tượng** – Hàng trăm mesh được quản lý qua `ObjectManager`
-- ✅ **≥ 3 loại vật liệu** – Standard, Phong, Toon, Wireframe, Normal
-- ✅ **≥ 2 kiểu ánh sáng (Directional + Point/Spot)** – Có đủ 4 loại
-- ✅ **Tương tác: xoay/zoom, bật/tắt layer** – OrbitControls + Tab Vật thể
-- ✅ **Hiệu năng ≥ 45 FPS** – Shadow tắt, vật liệu Lambert/Standard
-- ⚠️ **Draw calls ≤ 300** – Phụ thuộc độ phức tạp mô hình
-- 📌 **Code demo (GitHub Pages/Netlify)** – Deploy sau khi hoàn thiện
-- 📌 **Video demo 2–3 phút** – Quay màn hình thao tác đầy đủ
-- ✅ **Tài liệu hướng dẫn** – File này
-
----
-
-## ⚡ Build & Deploy
+### Build production
 
 ```bash
-# Build production
 npm run build
+```
 
-# Preview bản build
+### Xem trước bản build
+
+```bash
 npm run preview
 ```
 
-Thư mục `dist/` chứa toàn bộ static files, có thể deploy lên **GitHub Pages** hoặc **Netlify** trực tiếp.
+## 8. Yêu cầu phần cứng và phần mềm
 
----
+- Trình duyệt hiện đại hỗ trợ WebGL.
+- Máy tính có GPU tích hợp hoặc GPU rời thông dụng.
+- Node.js và npm để cài đặt, chạy và build dự án.
 
-## 👥 Nhóm thực hiện
+## 9. Kết quả đạt được
 
-> Chuyên đề: **Thiết kế và Lập trình Đồ họa Nâng cao**
-> Thành viên:
->
-> - Nguyễn Ngọc Hải Đăng - 2115244
-> - Trần Quốc Khánh - 2115244
->
-> Công cụ: Three.js · Vite · GLTF/GLB · Blender · Lighthouse · Spector.js
+- Xây dựng thành công website 3D mô phỏng không gian nội thất phòng khách.
+- Có giao diện điều khiển rõ ràng cho vật thể, vật liệu và ánh sáng.
+- Có tương tác camera và chọn đối tượng trực tiếp trong cảnh.
+- Có nhiều nhóm đối tượng để thao tác và đáp ứng yêu cầu cảnh có trên 10 nhóm hoặc đối tượng logic.
+- Có khả năng build và triển khai thành website tĩnh.
+
+## 10. Hạn chế hiện tại
+
+- Cảnh hiện sử dụng một mô hình nội thất có sẵn, chưa tự thiết kế toàn bộ từ đầu.
+- Chưa tích hợp hệ thống lưu cấu hình vật liệu hoặc ánh sáng theo người dùng.
+- Giao diện vẫn tập trung vào tính năng kỹ thuật, chưa phát triển theo hướng thương mại hóa hoàn chỉnh.
+
+## 11. Hướng phát triển
+
+- Bổ sung nhiều mẫu nội thất và nhiều không gian phòng khác nhau.
+- Tích hợp thay đổi texture thực tế hơn cho từng món đồ.
+- Tối ưu thêm hiệu năng và giảm dung lượng tải ban đầu.
+- Triển khai bản online trên GitHub Pages hoặc Netlify.
+- Mở rộng theo hướng showroom nội thất hoặc trình diễn sản phẩm thương mại.
+
+## 12. Kết luận
+
+Đồ án đã xây dựng được một ứng dụng Web 3D tương tác cho không gian nội thất phòng khách bằng Three.js. Hệ thống đáp ứng các chức năng cốt lõi như hiển thị mô hình 3D, điều khiển camera, thay đổi vật liệu, điều chỉnh ánh sáng và quản lý nhóm đối tượng. Đây là nền tảng phù hợp để tiếp tục phát triển thành sản phẩm trực quan hóa nội thất trên web trong các giai đoạn tiếp theo.

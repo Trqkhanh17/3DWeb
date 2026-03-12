@@ -58,10 +58,9 @@ export class UIPanel {
 
     // Gom các object có cùng groupId thành 1 entry
     const seen = new Set();
-    const entries = []; // [{ repName, groupId, color, count }]
+    const entries = [];
 
     this.#objectManager.objects.forEach((obj) => {
-      // CHỈ xử lý các object thuộc về một nhóm (groupId không null)
       if (!obj.groupId) return;
 
       const key = obj.groupId;
@@ -69,7 +68,12 @@ export class UIPanel {
       seen.add(key);
 
       const count = this.#objectManager.objects.filter((o) => o.groupId === obj.groupId).length;
-      entries.push({ repName: obj.name, groupId: obj.groupId, color: obj.color, count, label: obj.groupLabel });
+      entries.push({
+        repName: obj.name,
+        color: obj.color,
+        count,
+        label: obj.groupLabel,
+      });
     });
 
     console.log(
@@ -270,12 +274,10 @@ export class UIPanel {
   #selectObject(name) {
     this.#selectedObject = name;
 
-    // Tìm object thực tế để xem nó thuộc groupId nào
     const targets = this.#objectManager.getGroupObjects(name);
     const repName = targets[0]?.name;
 
     document.querySelectorAll('.layer-item').forEach((item) => {
-      // Highlight nếu item này là đại diện cho group chứa 'obj' (đối tượng đầu tiên trong group là key đại diện)
       item.classList.toggle('selected', item.dataset.name === repName);
     });
 
